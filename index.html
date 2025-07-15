@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Analytics Dashboard</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<script src="https://apis.google.com/js/api.js"></script>
+	<script>
+		tailwind.config = {
+			theme: {
+				extend: {
+					colors: {
+						primary: '#6750A4',
+						secondary: '#958DA5',
+						tertiary: '#B58392',
+						surface: '#FEF7FF',
+						background: '#FFFBFE',
+						error: '#B3261E',
+					},
+					fontFamily: {
+						'roboto': ['Roboto', 'sans-serif'],
+					},
+				}
+			}
+		}
+	</script>
+	<style>
+		body {
+			font-family: 'Roboto', sans-serif;
+			background-color: #FFFBFE;
+			color: #1C1B1F;
+		}
+
+		.material-card {
+			border-radius: 16px;
+			background-color: #FEF7FF;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+		}
+
+		.material-btn {
+			border-radius: 100px;
+			font-weight: 500;
+			text-transform: capitalize;
+			transition: all 0.3s;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+		}
+
+		.material-btn:hover {
+			box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+		}
+
+		.material-btn:active {
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+		}
+
+		.material-icon {
+			font-family: 'Material Icons';
+			font-weight: normal;
+			font-style: normal;
+			font-size: 24px;
+			line-height: 1;
+			letter-spacing: normal;
+			text-transform: none;
+			display: inline-block;
+			white-space: nowrap;
+			word-wrap: normal;
+			direction: ltr;
+			-webkit-font-feature-settings: 'liga';
+			-webkit-font-smoothing: antialiased;
+		}
+
+		.chart-container {
+			height: 300px;
+			position: relative;
+		}
+
+		.nav-item {
+			transition: background-color 0.3s;
+			border-radius: 100px;
+		}
+
+		.nav-item:hover {
+			background-color: rgba(103, 80, 164, 0.08);
+		}
+
+		.nav-item.active {
+			background-color: rgba(103, 80, 164, 0.12);
+			color: #6750A4;
+		}
+
+		.chip {
+			border-radius: 8px;
+			padding: 6px 12px;
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+
+		.chip.active {
+			background-color: #6750A4;
+			color: white;
+		}
+
+		.chip:hover:not(.active) {
+			background-color: rgba(103, 80, 164, 0.08);
+		}
+
+		.switch {
+			position: relative;
+			display: inline-block;
+			width: 52px;
+			height: 32px;
+		}
+
+		.switch input {
+			opacity: 0;
+			width: 0;
+			height: 0;
+		}
+
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #E7E0EC;
+			transition: .4s;
+			border-radius: 34px;
+		}
+
+		.slider:before {
+			position: absolute;
+			content: "";
+			height: 24px;
+			width: 24px;
+			left: 4px;
+			bottom: 4px;
+			background-color: white;
+			transition: .4s;
+			border-radius: 50%;
+		}
+
+		input:checked+.slider {
+			background-color: #6750A4;
+		}
+
+		input:checked+.slider:before {
+			transform: translateX(20px);
+		}
+
+		.dropdown {
+			position: relative;
+			display: inline-block;
+		}
+
+		.dropdown-content {
+			display: none;
+			position: absolute;
+			background-color: #FEF7FF;
+			min-width: 160px;
+			box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+			z-index: 1;
+			border-radius: 8px;
+			overflow: hidden;
+		}
+
+		.dropdown-content a {
+			color: #1C1B1F;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+		}
+
+		.dropdown-content a:hover {
+			background-color: rgba(103, 80, 164, 0.08);
+		}
+
+		.show {
+			display: block;
+		}
+
+		::-webkit-scrollbar {
+			width: 8px;
+		}
+
+		::-webkit-scrollbar-track {
+			background: #F5F5F5;
+		}
+
+		::-webkit-scrollbar-thumb {
+			background: #BDBDBD;
+			border-radius: 4px;
+		}
+
+		::-webkit-scrollbar-thumb:hover {
+			background: #9E9E9E;
+		}
+	</style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+	<!-- Top App Bar -->
+	<header class="bg-surface shadow-sm z-10">
+		<div class="container mx-auto px-4 py-2 flex items-center justify-between">
+			<div class="flex items-center space-x-4">
+				<button id="menuBtn" class="p-2 rounded-full hover:bg-gray-200">
+					<span class="material-icon">menu</span>
+				</button>
+				<h1 class="text-xl font-medium">Analytics Dashboard</h1>
+			</div>
+			<div class="flex items-center space-x-4">
+				<button id="exportPdfBtn" class="material-btn bg-primary text-white px-4 py-2 flex items-center">
+					<span class="material-icon mr-1">picture_as_pdf</span>
+					Export PDF
+				</button>
+				<div class="dropdown">
+					<button id="accountDropdown" class="p-2 rounded-full hover:bg-gray-200">
+						<span class="material-icon">account_circle</span>
+					</button>
+					<div id="accountDropdownContent" class="dropdown-content right-0">
+						<a href="#" class="flex items-center">
+							<span class="material-icon mr-2">settings</span>
+							Settings
+						</a>
+						<a href="#" class="flex items-center">
+							<span class="material-icon mr-2">help</span>
+							Help
+						</a>
+						<a href="#" class="flex items-center">
+							<span class="material-icon mr-2">logout</span>
+							Logout
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<div class="flex flex-1">
+		<!-- Side Navigation -->
+		<aside id="sideNav" class="w-64 bg-surface border-r border-gray-200 h-screen transition-all duration-300">
+			<div class="p-4">
+				<div class="material-card p-4 mb-6">
+					<h2 class="font-medium mb-2">Connected Accounts</h2>
+					<div class="flex items-center justify-between mb-2">
+						<div class="flex items-center">
+							<span class="material-icon mr-2 text-green-500">check_circle</span>
+							<span>Search Console</span>
+						</div>
+						<label class="switch">
+							<input type="checkbox" checked>
+							<span class="slider"></span>
+						</label>
+					</div>
+					<div class="flex items-center justify-between">
+						<div class="flex items-center">
+							<span class="material-icon mr-2 text-green-500">check_circle</span>
+							<span>Analytics</span>
+						</div>
+						<label class="switch">
+							<input type="checkbox" checked>
+							<span class="slider"></span>
+						</label>
+					</div>
+				</div>
+
+				<h3 class="text-sm font-medium text-gray-500 mb-2">NAVIGATION</h3>
+				<nav>
+					<ul>
+						<li>
+							<a href="#dashboard" class="nav-item active flex items-center px-4 py-2 mb-1">
+								<span class="material-icon mr-3">dashboard</span>
+								Dashboard
+							</a>
+						</li>
+						<li>
+							<a href="#search-console" class="nav-item flex items-center px-4 py-2 mb-1">
+								<span class="material-icon mr-3">search</span>
+								Search Console
+							</a>
+						</li>
+						<li>
+							<a href="#analytics" class="nav-item flex items-center px-4 py-2 mb-1">
+								<span class="material-icon mr-3">analytics</span>
+								Analytics
+							</a>
+						</li>
+						<li>
+							<a href="#custom-reports" class="nav-item flex items-center px-4 py-2 mb-1">
+								<span class="material-icon mr-3">bar_chart</span>
+								Custom Reports
+							</a>
+						</li>
+						<li>
+							<a href="#settings" class="nav-item flex items-center px-4 py-2 mb-1">
+								<span class="material-icon mr-3">settings</span>
+								Settings
+							</a>
+						</li>
+					</ul>
+				</nav>
+
+				<div class="mt-8">
+					<h3 class="text-sm font-medium text-gray-500 mb-2">GOOGLE SHEET</h3>
+					<div class="material-card p-4">
+						<div class="flex items-center mb-2">
+							<span class="material-icon mr-2 text-green-500">description</span>
+							<span class="text-sm">Analytics-Data.xlsx</span>
+						</div>
+						<button id="connectSheetBtn" class="material-btn bg-primary text-white px-4 py-2 w-full flex items-center justify-center">
+							<span class="material-icon mr-1">link</span>
+							Connect Sheet
+						</button>
+					</div>
+				</div>
+			</div>
+		</aside>
+
+		<!-- Main Content Area -->
+		<main class="flex-1 p-6 overflow-auto">
+			<!-- Dashboard Tab -->
+			<section id="dashboard" class="tab-content">
+				<div class="mb-6">
+					<h2 class="text-2xl font-medium mb-2">Dashboard Overview</h2>
+					<p class="text-gray-600">Connected to Google Search Console and Analytics</p>
+				</div>
+
+				<!-- Date Range Selector -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex flex-wrap items-center justify-between">
+						<div class="flex items-center space-x-2 mb-2 sm:mb-0">
+							<span class="material-icon text-primary">date_range</span>
+							<span class="font-medium">Date Range:</span>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							<button class="chip active" data-range="7d">Last 7 days</button>
+							<button class="chip" data-range="30d">Last 30 days</button>
+							<button class="chip" data-range="90d">Last 3 months</button>
+							<button class="chip" data-range="365d">Last year</button>
+							<button class="chip flex items-center" data-range="custom">
+								<span class="material-icon mr-1">calendar_today</span>
+								Custom
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick Stats -->
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" id="quick-stats">
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Total Users</span>
+							<span class="material-icon text-primary">person</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="total-users">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="total-users-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Page Views</span>
+							<span class="material-icon text-primary">visibility</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="page-views">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="page-views-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Avg. Session</span>
+							<span class="material-icon text-primary">timer</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="avg-session">Loading...</span>
+							<span class="ml-2 text-red-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_downward</span>
+								<span id="avg-session-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Bounce Rate</span>
+							<span class="material-icon text-primary">exit_to_app</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="bounce-rate">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_downward</span>
+								<span id="bounce-rate-change">0%</span>
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Charts Section -->
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+					<!-- Traffic Overview Chart -->
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="font-medium">Traffic Overview</h3>
+							<div class="dropdown">
+								<button class="p-1 rounded hover:bg-gray-200">
+									<span class="material-icon">more_vert</span>
+								</button>
+								<div class="dropdown-content right-0">
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">download</span>
+										Download
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">edit</span>
+										Edit
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">delete</span>
+										Remove
+									</a>
+								</div>
+							</div>
+						</div>
+						<div class="chart-container" id="traffic-overview-chart">
+							<svg width="100%" height="100%" viewBox="0 0 800 300">
+								<!-- Placeholder -->
+								<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+							</svg>
+						</div>
+						<div class="flex justify-center mt-2">
+							<div class="flex items-center mr-4">
+								<div class="w-3 h-3 rounded-full bg-primary mr-1"></div>
+								<span class="text-sm">Users</span>
+							</div>
+							<div class="flex items-center">
+								<div class="w-3 h-3 rounded-full bg-tertiary mr-1"></div>
+								<span class="text-sm">Page Views</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Top Pages Chart -->
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="font-medium">Top Pages</h3>
+							<div class="dropdown">
+								<button class="p-1 rounded hover:bg-gray-200">
+									<span class="material-icon">more_vert</span>
+								</button>
+								<div class="dropdown-content right-0">
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">download</span>
+										Download
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">edit</span>
+										Edit
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">delete</span>
+										Remove
+									</a>
+								</div>
+							</div>
+						</div>
+						<div class="chart-container" id="top-pages-chart">
+							<svg width="100%" height="100%" viewBox="0 0 800 300">
+								<!-- Placeholder -->
+								<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+							</svg>
+						</div>
+					</div>
+				</div>
+
+				<!-- Search Console Data -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="font-medium">Search Console Performance</h3>
+						<button id="addToReportBtn" class="material-btn bg-white border border-gray-300 text-gray-700 px-4 py-2 flex items-center">
+							<span class="material-icon mr-1">add_chart</span>
+							Add to Report
+						</button>
+					</div>
+					<div class="overflow-x-auto">
+						<table class="min-w-full" id="search-console-table">
+							<thead>
+								<tr class="border-b border-gray-200">
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Query</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Clicks</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Impressions</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">CTR</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Position</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td colspan="5" class="py-3 px-4 text-center">Loading data...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- Custom Report Builder -->
+				<div class="material-card p-4">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="font-medium">Custom Report Builder</h3>
+						<button id="saveReportBtn" class="material-btn bg-primary text-white px-4 py-2 flex items-center">
+							<span class="material-icon mr-1">save</span>
+							Save Report
+						</button>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<h4 class="text-sm font-medium text-gray-500 mb-2">AVAILABLE CHARTS</h4>
+							<div id="availableCharts" class="border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto">
+								<div class="chart-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">insert_chart</span>
+										<span>Traffic Overview</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+								<div class="chart-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">bar_chart</span>
+										<span>Top Pages</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+								<div class="chart-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">pie_chart</span>
+										<span>Traffic Sources</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+								<div class="chart-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">trending_up</span>
+										<span>Keyword Rankings</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+								<div class="chart-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">public</span>
+										<span>Geographic Distribution</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+								<div class="chart-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">devices</span>
+										<span>Device Breakdown</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+								<div class="chart-item flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">speed</span>
+										<span>Page Speed Insights</span>
+									</div>
+									<span class="material-icon add-chart">add_circle</span>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<h4 class="text-sm font-medium text-gray-500 mb-2">YOUR REPORT</h4>
+							<div id="yourReport" class="border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto">
+								<div class="report-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">insert_chart</span>
+										<span>Traffic Overview</span>
+									</div>
+									<div class="flex">
+										<button class="move-up p-1 rounded hover:bg-gray-200 mr-1">
+											<span class="material-icon">arrow_upward</span>
+										</button>
+										<button class="move-down p-1 rounded hover:bg-gray-200 mr-1">
+											<span class="material-icon">arrow_downward</span>
+										</button>
+										<button class="delete-chart p-1 rounded hover:bg-gray-200">
+											<span class="material-icon">delete</span>
+										</button>
+									</div>
+								</div>
+								<div class="report-item flex items-center justify-between p-2 border-b border-gray-100 hover:bg-gray-50">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">bar_chart</span>
+										<span>Top Pages</span>
+									</div>
+									<div class="flex">
+										<button class="move-up p-1 rounded hover:bg-gray-200 mr-1">
+											<span class="material-icon">arrow_upward</span>
+										</button>
+										<button class="move-down p-1 rounded hover:bg-gray-200 mr-1">
+											<span class="material-icon">arrow_downward</span>
+										</button>
+										<button class="delete-chart p-1 rounded hover:bg-gray-200">
+											<span class="material-icon">delete</span>
+										</button>
+									</div>
+								</div>
+								<div class="report-item flex items-center justify-between p-2 hover:bg-gray-50">
+									<div class="flex items-center">
+										<span class="material-icon text-primary mr-2">trending_up</span>
+										<span>Keyword Rankings</span>
+									</div>
+									<div class="flex">
+										<button class="move-up p-1 rounded hover:bg-gray-200 mr-1">
+											<span class="material-icon">arrow_upward</span>
+										</button>
+										<button class="move-down p-1 rounded hover:bg-gray-200 mr-1">
+											<span class="material-icon">arrow_downward</span>
+										</button>
+										<button class="delete-chart p-1 rounded hover:bg-gray-200">
+											<span class="material-icon">delete</span>
+										</button>
+									</div>
+								</div>
+							</div>
+
+							<div class="mt-4">
+								<button id="previewReportBtn" class="material-btn bg-white border border-gray-300 text-gray-700 px-4 py-2 flex items-center mr-2">
+									<span class="material-icon mr-1">visibility</span>
+									Preview
+								</button>
+								<button id="exportReportBtn" class="material-btn bg-primary text-white px-4 py-2 flex items-center">
+									<span class="material-icon mr-1">picture_as_pdf</span>
+									Export PDF
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Search Console Tab -->
+			<section id="search-console" class="tab-content hidden">
+				<div class="mb-6">
+					<h2 class="text-2xl font-medium mb-2">Search Console</h2>
+					<p class="text-gray-600">Performance metrics from Google Search Console</p>
+				</div>
+
+				<!-- Date Range Selector -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex flex-wrap items-center justify-between">
+						<div class="flex items-center space-x-2 mb-2 sm:mb-0">
+							<span class="material-icon text-primary">date_range</span>
+							<span class="font-medium">Date Range:</span>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							<button class="chip active" data-range="7d">Last 7 days</button>
+							<button class="chip" data-range="30d">Last 30 days</button>
+							<button class="chip" data-range="90d">Last 3 months</button>
+							<button class="chip" data-range="365d">Last year</button>
+							<button class="chip flex items-center" data-range="custom">
+								<span class="material-icon mr-1">calendar_today</span>
+								Custom
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick Stats for Search Console -->
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" id="search-console-stats">
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Total Clicks</span>
+							<span class="material-icon text-primary">mouse</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="total-clicks">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="total-clicks-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Total Impressions</span>
+							<span class="material-icon text-primary">visibility</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="total-impressions">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="total-impressions-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Avg. CTR</span>
+							<span class="material-icon text-primary">percent</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="avg-ctr">Loading...</span>
+							<span class="ml-2 text-red-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_downward</span>
+								<span id="avg-ctr-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Avg. Position</span>
+							<span class="material-icon text-primary">leaderboard</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="avg-position">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_downward</span>
+								<span id="avg-position-change">0</span>
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Charts Section for Search Console -->
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+					<!-- Clicks and Impressions Chart -->
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="font-medium">Clicks and Impressions</h3>
+							<div class="dropdown">
+								<button class="p-1 rounded hover:bg-gray-200">
+									<span class="material-icon">more_vert</span>
+								</button>
+								<div class="dropdown-content right-0">
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">download</span>
+										Download
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">edit</span>
+										Edit
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">delete</span>
+										Remove
+									</a>
+								</div>
+							</div>
+						</div>
+						<div class="chart-container" id="clicks-impressions-chart">
+							<svg width="100%" height="100%" viewBox="0 0 800 300">
+								<!-- Placeholder -->
+								<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+							</svg>
+						</div>
+						<div class="flex justify-center mt-2">
+							<div class="flex items-center mr-4">
+								<div class="w-3 h-3 rounded-full bg-primary mr-1"></div>
+								<span class="text-sm">Clicks</span>
+							</div>
+							<div class="flex items-center">
+								<div class="w-3 h-3 rounded-full bg-tertiary mr-1"></div>
+								<span class="text-sm">Impressions</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Top Queries Bar Chart -->
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="font-medium">Top Queries</h3>
+							<div class="dropdown">
+								<button class="p-1 rounded hover:bg-gray-200">
+									<span class="material-icon">more_vert</span>
+								</button>
+								<div class="dropdown-content right-0">
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">download</span>
+										Download
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">edit</span>
+										Edit
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">delete</span>
+										Remove
+									</a>
+								</div>
+							</div>
+						</div>
+						<div class="chart-container" id="top-queries-chart">
+							<svg width="100%" height="100%" viewBox="0 0 800 300">
+								<!-- Placeholder -->
+								<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+							</svg>
+						</div>
+					</div>
+				</div>
+
+				<!-- Detailed Query Table -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="font-medium">Detailed Query Performance</h3>
+						<button class="material-btn bg-white border border-gray-300 text-gray-700 px-4 py-2 flex items-center" id="export-search-console-btn">
+							<span class="material-icon mr-1">download</span>
+							Export to Sheet
+						</button>
+					</div>
+					<div class="overflow-x-auto">
+						<table class="min-w-full" id="detailed-query-table">
+							<thead>
+								<tr class="border-b border-gray-200">
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Query</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Clicks</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Impressions</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">CTR</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Position</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Pages</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td colspan="6" class="py-3 px-4 text-center">Loading data...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+
+			<!-- Analytics Tab -->
+			<section id="analytics" class="tab-content hidden">
+				<div class="mb-6">
+					<h2 class="text-2xl font-medium mb-2">Analytics</h2>
+					<p class="text-gray-600">User behavior and traffic sources from Google Analytics</p>
+				</div>
+
+				<!-- Date Range Selector -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex flex-wrap items-center justify-between">
+						<div class="flex items-center space-x-2 mb-2 sm:mb-0">
+							<span class="material-icon text-primary">date_range</span>
+							<span class="font-medium">Date Range:</span>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							<button class="chip active" data-range="7d">Last 7 days</button>
+							<button class="chip" data-range="30d">Last 30 days</button>
+							<button class="chip" data-range="90d">Last 3 months</button>
+							<button class="chip" data-range="365d">Last year</button>
+							<button class="chip flex items-center" data-range="custom">
+								<span class="material-icon mr-1">calendar_today</span>
+								Custom
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick Stats for Analytics -->
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" id="analytics-stats">
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Active Users</span>
+							<span class="material-icon text-primary">group</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="active-users">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="active-users-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Sessions</span>
+							<span class="material-icon text-primary">access_time</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="sessions">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="sessions-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">Conversion Rate</span>
+							<span class="material-icon text-primary">trending_up</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="conversion-rate">Loading...</span>
+							<span class="ml-2 text-red-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_downward</span>
+								<span id="conversion-rate-change">0%</span>
+							</span>
+						</div>
+					</div>
+
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-gray-600">New Users</span>
+							<span class="material-icon text-primary">person_add</span>
+						</div>
+						<div class="flex items-end">
+							<span class="text-2xl font-medium" id="new-users">Loading...</span>
+							<span class="ml-2 text-green-500 text-sm flex items-center">
+								<span class="material-icon text-sm">arrow_upward</span>
+								<span id="new-users-change">0%</span>
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Charts Section for Analytics -->
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+					<!-- Users and Sessions Chart -->
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="font-medium">Users and Sessions</h3>
+							<div class="dropdown">
+								<button class="p-1 rounded hover:bg-gray-200">
+									<span class="material-icon">more_vert</span>
+								</button>
+								<div class="dropdown-content right-0">
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">download</span>
+										Download
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">edit</span>
+										Edit
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">delete</span>
+										Remove
+									</a>
+								</div>
+							</div>
+						</div>
+						<div class="chart-container" id="users-sessions-chart">
+							<svg width="100%" height="100%" viewBox="0 0 800 300">
+								<!-- Placeholder -->
+								<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+							</svg>
+						</div>
+						<div class="flex justify-center mt-2">
+							<div class="flex items-center mr-4">
+								<div class="w-3 h-3 rounded-full bg-primary mr-1"></div>
+								<span class="text-sm">Users</span>
+							</div>
+							<div class="flex items-center">
+								<div class="w-3 h-3 rounded-full bg-tertiary mr-1"></div>
+								<span class="text-sm">Sessions</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Traffic Sources Pie Chart -->
+					<div class="material-card p-4">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="font-medium">Traffic Sources</h3>
+							<div class="dropdown">
+								<button class="p-1 rounded hover:bg-gray-200">
+									<span class="material-icon">more_vert</span>
+								</button>
+								<div class="dropdown-content right-0">
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">download</span>
+										Download
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">edit</span>
+										Edit
+									</a>
+									<a href="#" class="flex items-center">
+										<span class="material-icon mr-2">delete</span>
+										Remove
+									</a>
+								</div>
+							</div>
+						</div>
+						<div class="chart-container" id="traffic-sources-chart">
+							<svg width="100%" height="100%" viewBox="0 0 400 300">
+								<!-- Placeholder -->
+								<text x="200" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+							</svg>
+						</div>
+					</div>
+				</div>
+
+				<!-- User Behavior Table -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="font-medium">User Behavior</h3>
+						<button class="material-btn bg-white border border-gray-300 text-gray-700 px-4 py-2 flex items-center" id="export-analytics-btn">
+							<span class="material-icon mr-1">download</span>
+							Export to Sheet
+						</button>
+					</div>
+					<div class="overflow-x-auto">
+						<table class="min-w-full" id="user-behavior-table">
+							<thead>
+								<tr class="border-b border-gray-200">
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Page Path</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Users</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Sessions</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Avg. Time</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Bounce Rate</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td colspan="5" class="py-3 px-4 text-center">Loading data...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+
+			<!-- Custom Reports Tab -->
+			<section id="custom-reports" class="tab-content hidden">
+				<div class="mb-6">
+					<h2 class="text-2xl font-medium mb-2">Custom Reports</h2>
+					<p class="text-gray-600">View and manage your saved custom reports</p>
+				</div>
+
+				<!-- Saved Reports List -->
+				<div class="material-card p-4 mb-6">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="font-medium">Saved Reports</h3>
+						<button id="newReportBtn" class="material-btn bg-primary text-white px-4 py-2 flex items-center">
+							<span class="material-icon mr-1">add</span>
+							New Report
+						</button>
+					</div>
+					<div class="overflow-x-auto">
+						<table class="min-w-full" id="saved-reports-table">
+							<thead>
+								<tr class="border-b border-gray-200">
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Report Name</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Created</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Last Modified</th>
+									<th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr class="border-b border-gray-100 hover:bg-gray-50">
+									<td class="py-3 px-4">Weekly SEO Performance</td>
+									<td class="py-3 px-4">2025-07-01</td>
+									<td class="py-3 px-4">2025-07-08</td>
+									<td class="py-3 px-4">
+										<button class="p-1 rounded hover:bg-gray-200">
+											<span class="material-icon">visibility</span>
+										</button>
+										<button class="p-1 rounded hover:bg-gray-200 ml-2">
+											<span class="material-icon">edit</span>
+										</button>
+										<button class="p-1 rounded hover:bg-gray-200 ml-2">
+											<span class="material-icon">delete</span>
+										</button>
+									</td>
+								</tr>
+								<tr class="border-b border-gray-100 hover:bg-gray-50">
+									<td class="py-3 px-4">Monthly Traffic Analysis</td>
+									<td class="py-3 px-4">2025-06-15</td>
+									<td class="py-3 px-4">2025-07-05</td>
+									<td class="py-3 px-4">
+										<button class="p-1 rounded hover:bg-gray-200">
+											<span class="material-icon">visibility</span>
+										</button>
+										<button class="p-1 rounded hover:bg-gray-200 ml-2">
+											<span class="material-icon">edit</span>
+										</button>
+										<button class="p-1 rounded hover:bg-gray-200 ml-2">
+											<span class="material-icon">delete</span>
+										</button>
+									</td>
+								</tr>
+								<tr class="border-b border-gray-100 hover:bg-gray-50">
+									<td class="py-3 px-4">Keyword Tracking Report</td>
+									<td class="py-3 px-4">2025-05-20</td>
+									<td class="py-3 px-4">2025-07-10</td>
+									<td class="py-3 px-4">
+										<button class="p-1 rounded hover:bg-gray-200">
+											<span class="material-icon">visibility</span>
+										</button>
+										<button class="p-1 rounded hover:bg-gray-200 ml-2">
+											<span class="material-icon">edit</span>
+										</button>
+										<button class="p-1 rounded hover:bg-gray-200 ml-2">
+											<span class="material-icon">delete</span>
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- Report Preview Area -->
+				<div class="material-card p-4">
+					<h3 class="font-medium mb-4">Report Preview</h3>
+					<div class="border border-gray-200 rounded-lg p-4 h-96 overflow-y-auto">
+						<p class="text-center text-gray-600">Select a report to preview</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- Settings Tab -->
+			<section id="settings" class="tab-content hidden">
+				<div class="mb-6">
+					<h2 class="text-2xl font-medium mb-2">Settings</h2>
+					<p class="text-gray-600">Manage your account and integrations</p>
+				</div>
+
+				<!-- Account Settings -->
+				<div class="material-card p-4 mb-6">
+					<h3 class="font-medium mb-4">Account Settings</h3>
+					<form>
+						<div class="mb-4">
+							<label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+							<input type="email" class="w-full border border-gray-300 rounded-lg p-2" value="user@example.com">
+						</div>
+						<div class="mb-4">
+							<label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+							<input type="password" class="w-full border border-gray-300 rounded-lg p-2" placeholder="********">
+						</div>
+						<div class="mb-4">
+							<label class="block text-sm font-medium text-gray-700 mb-1">Notification Preferences</label>
+							<select class="w-full border border-gray-300 rounded-lg p-2">
+								<option>Daily</option>
+								<option>Weekly</option>
+								<option>Monthly</option>
+								<option>None</option>
+							</select>
+						</div>
+						<button type="submit" class="material-btn bg-primary text-white px-4 py-2">Save Changes</button>
+					</form>
+				</div>
+
+				<!-- Integrations -->
+				<div class="material-card p-4 mb-6">
+					<h3 class="font-medium mb-4">Integrations</h3>
+					<div class="flex items-center justify-between mb-4">
+						<div class="flex items-center">
+							<span class="material-icon mr-2 text-green-500">check_circle</span>
+							<span>Google Search Console</span>
+						</div>
+						<button class="material-btn bg-white border border-gray-300 text-gray-700 px-4 py-1">Disconnect</button>
+					</div>
+					<div class="flex items-center justify-between mb-4">
+						<div class="flex items-center">
+							<span class="material-icon mr-2 text-green-500">check_circle</span>
+							<span>Google Analytics</span>
+						</div>
+						<button class="material-btn bg-white border border-gray-300 text-gray-700 px-4 py-1">Disconnect</button>
+					</div>
+					<div class="flex items-center justify-between">
+						<div class="flex items-center">
+							<span class="material-icon mr-2 text-red-500">cancel</span>
+							<span>HubSpot</span>
+						</div>
+						<button class="material-btn bg-primary text-white px-4 py-1">Connect</button>
+					</div>
+				</div>
+
+				<!-- Data Export -->
+				<div class="material-card p-4">
+					<h3 class="font-medium mb-4">Data Export</h3>
+					<p class="text-gray-600 mb-4">Export all your data in CSV format</p>
+					<button class="material-btn bg-primary text-white px-4 py-2 flex items-center" id="export-csv-btn">
+						<span class="material-icon mr-1">download</span>
+						Export Data
+					</button>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<!-- Modal for Google API Connection -->
+	<div id="apiModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+		<div class="bg-white rounded-lg w-full max-w-md p-6">
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-xl font-medium">Connect Google API</h3>
+				<button id="closeApiModal" class="p-1 rounded-full hover:bg-gray-200">
+					<span class="material-icon">close</span>
+				</button>
+			</div>
+			<div class="mb-4">
+				<label class="block text-sm font-medium text-gray-700 mb-1">Google Sheet URL</label>
+				<input id="sheetUrl" type="text" class="w-full border border-gray-300 rounded-lg p-2" placeholder="https://docs.google.com/spreadsheets/d/...">
+			</div>
+			<div class="mb-4">
+				<label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+				<input id="apiKey" type="text" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Enter your API key">
+			</div>
+			<div class="mb-4">
+				<label class="block text-sm font-medium text-gray-700 mb-1">Analytics Property ID</label>
+				<input id="propertyId" type="text" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Enter your GA4 Property ID">
+			</div>
+			<div class="mb-4">
+				<label class="block text-sm font-medium text-gray-700 mb-1">Search Console Site URL</label>
+				<input id="siteUrl" type="text" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Enter your site URL (e.g., https://example.com)">
+			</div>
+			<div class="flex justify-end">
+				<button id="cancelApiBtn" class="material-btn bg-gray-200 text-gray-700 px-4 py-2 mr-2">Cancel</button>
+				<button id="connectApiBtn" class="material-btn bg-primary text-white px-4 py-2">Connect</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- PDF Export Preview Modal -->
+	<div id="pdfPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+		<div class="bg-white rounded-lg w-full max-w-4xl p-6">
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-xl font-medium">PDF Export Preview</h3>
+				<button id="closePdfModal" class="p-1 rounded-full hover:bg-gray-200">
+					<span class="material-icon">close</span>
+				</button>
+			</div>
+			<div id="pdfPreviewContent" class="border border-gray-200 rounded-lg p-4 mb-4 h-96 overflow-y-auto">
+				<div class="text-center p-8">
+					<h1 class="text-2xl font-bold mb-2">Analytics Report</h1>
+					<p class="text-gray-600 mb-4">Generated on July 11, 2025</p>
+					<div id="pdf-preview-charts"></div>
+				</div>
+			</div>
+			<div class="flex justify-end">
+				<button id="cancelPdfBtn" class="material-btn bg-gray-200 text-gray-700 px-4 py-2 mr-2">Cancel</button>
+				<button id="downloadPdfBtn" class="material-btn bg-primary text-white px-4 py-2 flex items-center">
+					<span class="material-icon mr-1">download</span>
+					Download PDF
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Google API Configuration
+		const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your OAuth 2.0 Client ID
+		const API_KEY = 'YOUR_API_KEY'; // Replace with your API Key
+		const SCOPES = [
+			'https://www.googleapis.com/auth/analytics.readonly',
+			'https://www.googleapis.com/auth/webmasters.readonly',
+			'https://www.googleapis.com/auth/spreadsheets'
+		];
+		const DISCOVERY_DOCS = [
+			'https://www.googleapis.com/discovery/v1/apis/analyticsdata/v1beta/rest',
+			'https://www.googleapis.com/discovery/v1/apis/webmasters/v3/rest',
+			'https://sheets.googleapis.com/$discovery/rest?version=v4'
+		];
+		let tokenClient;
+		let gapiInited = false;
+		let gisInited = false;
+		let currentDateRange = '7d';
+		let analyticsData = {};
+		let searchConsoleData = {};
+		// Initialize Google API Client
+		function initGapi() {
+			gapi.load('client', initializeGapiClient);
+		}
+		async function initializeGapiClient() {
+			await gapi.client.init({
+				apiKey: API_KEY,
+				discoveryDocs: DISCOVERY_DOCS,
+			});
+			gapiInited = true;
+			maybeEnableButtons();
+		}
+		// Initialize Google Identity Services
+		function initGis() {
+			tokenClient = google.accounts.oauth2.initTokenClient({
+				client_id: CLIENT_ID,
+				scope: SCOPES.join(' '),
+				callback: (tokenResponse) => {
+					if (tokenResponse.access_token) {
+						gapi.client.setToken(tokenResponse);
+						loadDashboardData();
+					}
+				},
+			});
+			gisInited = true;
+			maybeEnableButtons();
+		}
+
+		function maybeEnableButtons() {
+			if (gapiInited && gisInited) {
+				document.getElementById('connectApiBtn').disabled = false;
+			}
+		}
+		// Load Dashboard Data
+		async function loadDashboardData() {
+			const propertyId = document.getElementById('propertyId').value;
+			const siteUrl = document.getElementById('siteUrl').value;
+			if (!propertyId || !siteUrl) {
+				alert('Please provide Analytics Property ID and Search Console Site URL.');
+				return;
+			}
+			try {
+				// Fetch Google Analytics Data
+				const gaResponse = await gapi.client.analyticsdata.properties.runReport({
+					property: `properties/${propertyId}`,
+					resource: {
+						dateRanges: [{
+							startDate: getStartDate(currentDateRange),
+							endDate: 'today'
+						}],
+						metrics: [{
+								name: 'activeUsers'
+							},
+							{
+								name: 'sessions'
+							},
+							{
+								name: 'screenPageViews'
+							},
+							{
+								name: 'averageSessionDuration'
+							},
+							{
+								name: 'bounceRate'
+							}
+						],
+						dimensions: [{
+							name: 'date'
+						}, {
+							name: 'pagePath'
+						}],
+					}
+				});
+				analyticsData = gaResponse.result;
+				// Fetch Search Console Data
+				const scResponse = await gapi.client.webmasters.searchanalytics.query({
+					siteUrl: siteUrl,
+					resource: {
+						startDate: getStartDate(currentDateRange),
+						endDate: 'today',
+						dimensions: ['query', 'page'],
+						rowLimit: 10
+					}
+				});
+				searchConsoleData = scResponse.result;
+				updateDashboard();
+				updateSearchConsoleTab();
+				updateAnalyticsTab();
+			} catch (error) {
+				console.error('Error fetching data:', error);
+				alert('Failed to fetch data. Please check your credentials and try again.');
+			}
+		}
+		// Calculate Start Date based on Range
+		function getStartDate(range) {
+			const today = new Date();
+			if (range === '7d') return new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+			if (range === '30d') return new Date(today.setDate(today.getDate() - 30)).toISOString().split('T')[0];
+			if (range === '90d') return new Date(today.setDate(today.getDate() - 90)).toISOString().split('T')[0];
+			if (range === '365d') return new Date(today.setDate(today.getDate() - 365)).toISOString().split('T')[0];
+			return '7daysAgo'; // Default
+		}
+		// Update Dashboard Tab
+		function updateDashboard() {
+			// Update Quick Stats
+			const metrics = analyticsData.rows.reduce((acc, row) => {
+				acc.users = (acc.users || 0) + parseInt(row.metricValues[0].value);
+				acc.pageViews = (acc.pageViews || 0) + parseInt(row.metricValues[2].value);
+				acc.sessionDuration = (acc.sessionDuration || 0) + parseFloat(row.metricValues[3].value);
+				acc.bounceRate = (acc.bounceRate || 0) + parseFloat(row.metricValues[4].value);
+				return acc;
+			}, {
+				users: 0,
+				pageViews: 0,
+				sessionDuration: 0,
+				bounceRate: 0
+			});
+			document.getElementById('total-users').textContent = metrics.users.toLocaleString();
+			document.getElementById('page-views').textContent = metrics.pageViews.toLocaleString();
+			document.getElementById('avg-session').textContent = formatDuration(metrics.sessionDuration / analyticsData.rows.length);
+			document.getElementById('bounce-rate').textContent = (metrics.bounceRate / analyticsData.rows.length).toFixed(1) + '%';
+			// Update Traffic Overview Chart
+			const trafficData = analyticsData.rows.reduce((acc, row) => {
+				const date = row.dimensionValues[0].value;
+				acc[date] = acc[date] || {
+					users: 0,
+					pageViews: 0
+				};
+				acc[date].users += parseInt(row.metricValues[0].value);
+				acc[date].pageViews += parseInt(row.metricValues[2].value);
+				return acc;
+			}, {});
+			updateTrafficOverviewChart(Object.keys(trafficData).map(date => ({
+				date,
+				users: trafficData[date].users,
+				pageViews: trafficData[date].pageViews
+			})));
+			// Update Top Pages Chart
+			const topPages = analyticsData.rows.reduce((acc, row) => {
+				const path = row.dimensionValues[1].value;
+				acc[path] = (acc[path] || 0) + parseInt(row.metricValues[2].value);
+				return acc;
+			}, {});
+			updateTopPagesChart(Object.entries(topPages).map(([path, views]) => ({
+				path,
+				views
+			})));
+			// Update Search Console Table
+			updateSearchConsoleTable(searchConsoleData.rows || []);
+		}
+		// Update Search Console Tab
+		function updateSearchConsoleTab() {
+			// Update Quick Stats
+			const scMetrics = searchConsoleData.rows.reduce((acc, row) => {
+				acc.clicks = (acc.clicks || 0) + row.clicks;
+				acc.impressions = (acc.impressions || 0) + row.impressions;
+				acc.ctr = (acc.ctr || 0) + row.ctr;
+				acc.position = (acc.position || 0) + row.position;
+				return acc;
+			}, {
+				clicks: 0,
+				impressions: 0,
+				ctr: 0,
+				position: 0
+			});
+			document.getElementById('total-clicks').textContent = scMetrics.clicks.toLocaleString();
+			document.getElementById('total-impressions').textContent = scMetrics.impressions.toLocaleString();
+			document.getElementById('avg-ctr').textContent = (scMetrics.ctr / searchConsoleData.rows.length * 100).toFixed(1) + '%';
+			document.getElementById('avg-position').textContent = (scMetrics.position / searchConsoleData.rows.length).toFixed(1);
+			// Update Clicks and Impressions Chart
+			const scData = searchConsoleData.rows.reduce((acc, row) => {
+				const date = row.keys[0]; // Assuming date dimension is included
+				acc[date] = acc[date] || {
+					clicks: 0,
+					impressions: 0
+				};
+				acc[date].clicks += row.clicks;
+				acc[date].impressions += row.impressions;
+				return acc;
+			}, {});
+			updateClicksImpressionsChart(Object.keys(scData).map(date => ({
+				date,
+				clicks: scData[date].clicks,
+				impressions: scData[date].impressions
+			})));
+			// Update Top Queries Chart
+			const topQueries = searchConsoleData.rows.map(row => ({
+				query: row.keys[0],
+				clicks: row.clicks
+			}));
+			updateTopQueriesChart(topQueries);
+			// Update Detailed Query Table
+			updateDetailedQueryTable(searchConsoleData.rows || []);
+		}
+		// Update Analytics Tab
+		function updateAnalyticsTab() {
+			// Update Quick Stats
+			const metrics = analyticsData.rows.reduce((acc, row) => {
+				acc.activeUsers = (acc.activeUsers || 0) + parseInt(row.metricValues[0].value);
+				acc.sessions = (acc.sessions || 0) + parseInt(row.metricValues[1].value);
+				acc.conversionRate = (acc.conversionRate || 0) + parseFloat(row.metricValues[4].value);
+				acc.newUsers = (acc.newUsers || 0) + parseInt(row.metricValues[0].value);
+				return acc;
+			}, {
+				activeUsers: 0,
+				sessions: 0,
+				conversionRate: 0,
+				newUsers: 0
+			});
+			document.getElementById('active-users').textContent = metrics.activeUsers.toLocaleString();
+			document.getElementById('sessions').textContent = metrics.sessions.toLocaleString();
+			document.getElementById('conversion-rate').textContent = (metrics.conversionRate / analyticsData.rows.length).toFixed(1) + '%';
+			document.getElementById('new-users').textContent = metrics.newUsers.toLocaleString();
+			// Update Users and Sessions Chart
+			const userSessionData = analyticsData.rows.reduce((acc, row) => {
+				const date = row.dimensionValues[0].value;
+				acc[date] = acc[date] || {
+					users: 0,
+					sessions: 0
+				};
+				acc[date].users += parseInt(row.metricValues[0].value);
+				acc[date].sessions += parseInt(row.metricValues[1].value);
+				return acc;
+			}, {});
+			updateUsersSessionsChart(Object.keys(userSessionData).map(date => ({
+				date,
+				users: userSessionData[date].users,
+				sessions: userSessionData[date].sessions
+			})));
+			// Update Traffic Sources Chart
+			const trafficSources = analyticsData.rows.reduce((acc, row) => {
+				const source = row.dimensionValues[1].value; // Assuming source dimension
+				acc[source] = (acc[source] || 0) + parseInt(row.metricValues[0].value);
+				return acc;
+			}, {});
+			updateTrafficSourcesChart(Object.entries(trafficSources).map(([source, users]) => ({
+				source,
+				users
+			})));
+			// Update User Behavior Table
+			updateUserBehaviorTable(analyticsData.rows || []);
+		}
+		// Chart Update Functions
+		function updateTrafficOverviewChart(data) {
+			const svg = document.querySelector('#traffic-overview-chart svg');
+			svg.innerHTML = `
+                <!-- Grid Lines -->
+                <line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="200" x2="750" y2="200" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
+                
+                <!-- Y-axis labels -->
+                <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
+                <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
+                <text x="40" y="150" text-anchor="end" font-size="12" fill="#757575">10k</text>
+                <text x="40" y="100" text-anchor="end" font-size="12" fill="#757575">15k</text>
+                <text x="40" y="50" text-anchor="end" font-size="12" fill="#757575">20k</text>
+            `;
+			const maxValue = Math.max(...data.map(d => Math.max(d.users, d.pageViews)));
+			const step = (750 - 100) / (data.length - 1);
+			const userPoints = data.map((d, i) => {
+				const y = 250 - (d.users / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			const pageViewPoints = data.map((d, i) => {
+				const y = 250 - (d.pageViews / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			svg.innerHTML += `
+                <!-- Line for Users -->
+                <path d="M${userPoints.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+                <!-- Line for Page Views -->
+                <path d="M${pageViewPoints.join(' L')}" fill="none" stroke="#B58392" stroke-width="3" />
+                ${data.map((d, i) => `
+                    <!-- Data points for Users -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.users / maxValue * 200)}" r="5" fill="#6750A4" />
+                    <!-- Data points for Page Views -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.pageViews / maxValue * 200)}" r="5" fill="#B58392" />
+                    <!-- X-axis labels -->
+                    <text x="${100 +
