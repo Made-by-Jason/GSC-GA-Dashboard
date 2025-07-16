@@ -1738,7 +1738,7 @@
 			svg.innerHTML = `
                 <!-- Grid Lines -->
                 ${[...Array(5)].map((_, i) => `<line x1="50" y1="${250 - i * 50}" x2="750" y2="${250 - i * 50}" stroke="#E0E0E0" stroke-width="1" />`).join('')}
-
+                
                 <!-- Y-axis labels -->
                 ${yAxisLabels.map((label, i) => `<text x="40" y="${250 - i * 50}" text-anchor="end" font-size="12" fill="#757575">${label}</text>`).join('')}
             `;
@@ -1881,7 +1881,7 @@
 				const y1 = 150 + 100 * Math.sin(Math.PI * startAngle / 180);
 				const x2 = 200 + 100 * Math.cos(Math.PI * endAngle / 180);
 				const y2 = 150 + 100 * Math.sin(Math.PI * endAngle / 180);
-
+				
 				const path = `M200,150 L${x1},${y1} A100,100 0 ${largeArc},1 ${x2},${y2} Z`;
 				startAngle = endAngle;
 				return `<path d="${path}" fill="${colors[i % colors.length]}" />`;
@@ -1899,7 +1899,7 @@
                 <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
-
+                
                 <!-- Y-axis labels -->
                 <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
                 <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
@@ -1913,7 +1913,7 @@
 				const y = 250 - (d.views / maxValue * 200);
 				return `${100 + i * step},${y}`;
 			});
-
+			
 			svg.innerHTML += `
                 <!-- Line for Page Views -->
                 <path d="M${points.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
@@ -1934,7 +1934,7 @@
                 <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
-
+                
                 <!-- Y-axis labels -->
                 <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
                 <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
@@ -1976,7 +1976,7 @@
                 <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
-
+                
                 <!-- Y-axis labels -->
                 <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
                 <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
@@ -1990,7 +1990,7 @@
 				const y = 250 - (d.clicks / maxValue * 200);
 				return `${100 + i * step},${y}`;
 			});
-
+			
 			svg.innerHTML += `
                 <!-- Line for Clicks -->
                 <path d="M${points.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
@@ -2011,7 +2011,7 @@
                 <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
                 <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
-
+                
                 <!-- Y-axis labels -->
                 <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
                 <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
@@ -2418,4 +2418,12 @@
                     <!-- Data points for Page Views -->
                     <circle cx="${100 + i * step}" cy="${250 - (d.pageViews / maxValue * 200)}" r="5" fill="#B58392" />
                     <!-- X-axis labels -->
-                    <text x="${100 +
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+                `).join('')}
+            `;
+		}
+
+	</script>
+</body>
+
+</html>
