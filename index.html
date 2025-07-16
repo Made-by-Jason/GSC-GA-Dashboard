@@ -9,6 +9,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<script src="https://apis.google.com/js/api.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script>
 		tailwind.config = {
 			theme: {
@@ -1262,6 +1263,7 @@
 
 	<script>
 		// Google API Configuration
+		// IMPORTANT: Replace with your own credentials
 		const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your OAuth 2.0 Client ID
 		const API_KEY = 'YOUR_API_KEY'; // Replace with your API Key
 		const SCOPES = [
@@ -1283,6 +1285,85 @@
 		// Initialize Google API Client
 		function initGapi() {
 			gapi.load('client', initializeGapiClient);
+		}
+
+		// --- Placeholder Functions ---
+		function updateSearchConsoleTable(rows) {
+			const tableBody = document.querySelector('#search-console-table tbody');
+			if (!rows || rows.length === 0) {
+				tableBody.innerHTML = '<tr><td colspan="5" class="py-3 px-4 text-center">No data available.</td></tr>';
+				return;
+			}
+			tableBody.innerHTML = rows.map(row => `
+				<tr class="border-b border-gray-100 hover:bg-gray-50">
+					<td class="py-3 px-4">${row.keys[0]}</td>
+					<td class="py-3 px-4">${row.clicks}</td>
+					<td class="py-3 px-4">${row.impressions}</td>
+					<td class="py-3 px-4">${(row.ctr * 100).toFixed(2)}%</td>
+					<td class="py-3 px-4">${row.position.toFixed(2)}</td>
+				</tr>
+			`).join('');
+		}
+
+		function updateDetailedQueryTable(rows) {
+			const tableBody = document.querySelector('#detailed-query-table tbody');
+			if (!rows || rows.length === 0) {
+				tableBody.innerHTML = '<tr><td colspan="6" class="py-3 px-4 text-center">No data available.</td></tr>';
+				return;
+			}
+			tableBody.innerHTML = rows.map(row => `
+				<tr class="border-b border-gray-100 hover:bg-gray-50">
+					<td class="py-3 px-4">${row.keys[0]}</td>
+					<td class="py-3 px-4">${row.clicks}</td>
+					<td class="py-3 px-4">${row.impressions}</td>
+					<td class="py-3 px-4">${(row.ctr * 100).toFixed(2)}%</td>
+					<td class="py-3 px-4">${row.position.toFixed(2)}</td>
+					<td class="py-3 px-4">${row.keys[1]}</td>
+				</tr>
+			`).join('');
+		}
+
+		function updateUserBehaviorTable(rows) {
+			const tableBody = document.querySelector('#user-behavior-table tbody');
+			if (!rows || rows.length === 0) {
+				tableBody.innerHTML = '<tr><td colspan="5" class="py-3 px-4 text-center">No data available.</td></tr>';
+				return;
+			}
+			tableBody.innerHTML = rows.map(row => `
+				<tr class="border-b border-gray-100 hover:bg-gray-50">
+					<td class="py-3 px-4">${row.dimensionValues[1].value}</td>
+					<td class="py-3 px-4">${row.metricValues[0].value}</td>
+					<td class="py-3 px-4">${row.metricValues[1].value}</td>
+					<td class="py-3 px-4">${formatDuration(row.metricValues[3].value)}</td>
+					<td class="py-3 px-4">${(row.metricValues[4].value * 100).toFixed(2)}%</td>
+				</tr>
+			`).join('');
+		}
+
+		function updateClicksImpressionsChart(data) {
+			console.log("updateClicksImpressionsChart", data);
+		}
+
+		function updateTopQueriesChart(data) {
+			console.log("updateTopQueriesChart", data);
+		}
+
+		function updateUsersSessionsChart(data) {
+			console.log("updateUsersSessionsChart", data);
+		}
+
+		function updateTrafficSourcesChart(data) {
+			console.log("updateTrafficSourcesChart", data);
+		}
+
+		function updateTopPagesChart(data) {
+			console.log("updateTopPagesChart", data);
+		}
+
+		function formatDuration(seconds) {
+			const minutes = Math.floor(seconds / 60);
+			const remainingSeconds = Math.floor(seconds % 60);
+			return `${minutes}m ${remainingSeconds}s`;
 		}
 		async function initializeGapiClient() {
 			await gapi.client.init({
@@ -1313,8 +1394,784 @@
 				document.getElementById('connectApiBtn').disabled = false;
 			}
 		}
+
+		// Modal Handling
+		const apiModal = document.getElementById('apiModal');
+		const pdfPreviewModal = document.getElementById('pdfPreviewModal');
+
+		function showModal(modal) {
+			modal.classList.remove('hidden');
+		}
+
+		function hideModal(modal) {
+			modal.classList.add('hidden');
+		}
+
+		document.getElementById('connectSheetBtn').addEventListener('click', () => showModal(apiModal));
+		document.getElementById('closeApiModal').addEventListener('click', () => hideModal(apiModal));
+		document.getElementById('cancelApiBtn').addEventListener('click', () => hideModal(apiModal));
+
+		document.getElementById('exportPdfBtn').addEventListener('click', () => showModal(pdfPreviewModal));
+		document.getElementById('closePdfModal').addEventListener('click', () => hideModal(pdfPreviewModal));
+		document.getElementById('cancelPdfBtn').addEventListener('click', () => hideModal(pdfPreviewModal));
+
+		// Tab Navigation
+		const navLinks = document.querySelectorAll('.nav-item');
+		const tabs = document.querySelectorAll('.tab-content');
+		navLinks.forEach(link => {
+			link.addEventListener('click', (e) => {
+				e.preventDefault();
+				const target = link.getAttribute('href');
+
+				navLinks.forEach(nav => nav.classList.remove('active'));
+				link.classList.add('active');
+
+				tabs.forEach(tab => {
+					if (`#${tab.id}` === target) {
+						tab.classList.remove('hidden');
+					} else {
+						tab.classList.add('hidden');
+					}
+				});
+			});
+		});
+
+		// Date Range Chips
+		const dateChips = document.querySelectorAll('.chip');
+		dateChips.forEach(chip => {
+			chip.addEventListener('click', () => {
+				dateChips.forEach(c => c.classList.remove('active'));
+				chip.classList.add('active');
+				currentDateRange = chip.dataset.range;
+				loadDashboardData();
+			});
+		});
+
+		// Dropdown menus
+		document.addEventListener('click', (e) => {
+			const isDropdownButton = e.target.matches("[data-dropdown-toggle]");
+			if (!isDropdownButton && e.target.closest('.dropdown') === null) {
+				document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+			}
+		});
+		document.querySelectorAll('[data-dropdown-toggle]').forEach(button => {
+			button.addEventListener('click', (e) => {
+				const dropdownId = button.dataset.dropdownToggle;
+				document.getElementById(dropdownId).classList.toggle('show');
+			});
+		});
+
+		// Custom Report Builder
+		const availableCharts = document.getElementById('availableCharts');
+		const yourReport = document.getElementById('yourReport');
+
+		availableCharts.addEventListener('click', e => {
+			if (e.target.classList.contains('add-chart')) {
+				const chartItem = e.target.closest('.chart-item');
+				const newReportItem = chartItem.cloneNode(true);
+				newReportItem.querySelector('.add-chart').remove();
+				newReportItem.innerHTML += `
+					<div class="flex">
+						<button class="move-up p-1 rounded hover:bg-gray-200 mr-1"><span class="material-icon">arrow_upward</span></button>
+						<button class="move-down p-1 rounded hover:bg-gray-200 mr-1"><span class="material-icon">arrow_downward</span></button>
+						<button class="delete-chart p-1 rounded hover:bg-gray-200"><span class="material-icon">delete</span></button>
+					</div>
+				`;
+				yourReport.appendChild(newReportItem);
+			}
+		});
+
+		yourReport.addEventListener('click', e => {
+			const button = e.target.closest('button');
+			if (!button) return;
+
+			const reportItem = button.closest('.report-item');
+			if (button.classList.contains('delete-chart')) {
+				reportItem.remove();
+			} else if (button.classList.contains('move-up')) {
+				if (reportItem.previousElementSibling) {
+					yourReport.insertBefore(reportItem, reportItem.previousElementSibling);
+				}
+			} else if (button.classList.contains('move-down')) {
+				if (reportItem.nextElementSibling) {
+					yourReport.insertBefore(reportItem.nextElementSibling, reportItem);
+				}
+			}
+		});
+
+		// PDF Export
+		document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF();
+			const report = document.getElementById('pdfPreviewContent');
+			doc.html(report, {
+				callback: function (doc) {
+					doc.save('dashboard-report.pdf');
+				},
+				x: 10,
+				y: 10
+			});
+		});
+
+
 		// Load Dashboard Data
 		async function loadDashboardData() {
+			hideModal(apiModal);
+			const propertyId = document.getElementById('propertyId').value;
+			const siteUrl = document.getElementById('siteUrl').value;
+			if (!propertyId || !siteUrl) {
+				alert('Please provide Analytics Property ID and Search Console Site URL.');
+				return;
+			}
+			try {
+				// Fetch Google Analytics Data
+				const gaResponse = await gapi.client.analyticsdata.properties.runReport({
+					property: `properties/${propertyId}`,
+					resource: {
+						dateRanges: [{
+							startDate: getStartDate(currentDateRange),
+							endDate: 'today'
+						}],
+						metrics: [{
+								name: 'activeUsers'
+							},
+							{
+								name: 'sessions'
+							},
+							{
+								name: 'screenPageViews'
+							},
+							{
+								name: 'averageSessionDuration'
+							},
+							{
+								name: 'bounceRate'
+							}
+						],
+						dimensions: [{
+							name: 'date'
+						}, {
+							name: 'pagePath'
+						}],
+					}
+				});
+				analyticsData = gaResponse.result;
+				// Fetch Search Console Data
+				const scResponse = await gapi.client.webmasters.searchanalytics.query({
+					siteUrl: siteUrl,
+					resource: {
+						startDate: getStartDate(currentDateRange),
+						endDate: 'today',
+						dimensions: ['query', 'page'],
+						rowLimit: 10
+					}
+				});
+				searchConsoleData = scResponse.result;
+				updateDashboard();
+				updateSearchConsoleTab();
+				updateAnalyticsTab();
+			} catch (error) {
+				console.error('Error fetching data:', error);
+				alert('Failed to fetch data. Please check your credentials and try again.');
+			}
+		}
+		// Calculate Start Date based on Range
+		function getStartDate(range) {
+			const today = new Date();
+			if (range === '7d') return new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+			if (range === '30d') return new Date(today.setDate(today.getDate() - 30)).toISOString().split('T')[0];
+			if (range === '90d') return new Date(today.setDate(today.getDate() - 90)).toISOString().split('T')[0];
+			if (range === '365d') return new Date(today.setDate(today.getDate() - 365)).toISOString().split('T')[0];
+			return '7daysAgo'; // Default
+		}
+		// Update Dashboard Tab
+		function updateDashboard() {
+			// Update Quick Stats
+			const metrics = analyticsData.rows.reduce((acc, row) => {
+				acc.users = (acc.users || 0) + parseInt(row.metricValues[0].value);
+				acc.pageViews = (acc.pageViews || 0) + parseInt(row.metricValues[2].value);
+				acc.sessionDuration = (acc.sessionDuration || 0) + parseFloat(row.metricValues[3].value);
+				acc.bounceRate = (acc.bounceRate || 0) + parseFloat(row.metricValues[4].value);
+				return acc;
+			}, {
+				users: 0,
+				pageViews: 0,
+				sessionDuration: 0,
+				bounceRate: 0
+			});
+			document.getElementById('total-users').textContent = metrics.users.toLocaleString();
+			document.getElementById('page-views').textContent = metrics.pageViews.toLocaleString();
+			document.getElementById('avg-session').textContent = formatDuration(metrics.sessionDuration / analyticsData.rows.length);
+			document.getElementById('bounce-rate').textContent = (metrics.bounceRate / analyticsData.rows.length).toFixed(1) + '%';
+			// Update Traffic Overview Chart
+			const trafficData = analyticsData.rows.reduce((acc, row) => {
+				const date = row.dimensionValues[0].value;
+				acc[date] = acc[date] || {
+					users: 0,
+					pageViews: 0
+				};
+				acc[date].users += parseInt(row.metricValues[0].value);
+				acc[date].pageViews += parseInt(row.metricValues[2].value);
+				return acc;
+			}, {});
+			updateTrafficOverviewChart(Object.keys(trafficData).map(date => ({
+				date,
+				users: trafficData[date].users,
+				pageViews: trafficData[date].pageViews
+			})));
+			// Update Top Pages Chart
+			const topPages = analyticsData.rows.reduce((acc, row) => {
+				const path = row.dimensionValues[1].value;
+				acc[path] = (acc[path] || 0) + parseInt(row.metricValues[2].value);
+				return acc;
+			}, {});
+			updateTopPagesChart(Object.entries(topPages).map(([path, views]) => ({
+				path,
+				views
+			})));
+			// Update Search Console Table
+			updateSearchConsoleTable(searchConsoleData.rows || []);
+		}
+		// Update Search Console Tab
+		function updateSearchConsoleTab() {
+			// Update Quick Stats
+			const scMetrics = searchConsoleData.rows.reduce((acc, row) => {
+				acc.clicks = (acc.clicks || 0) + row.clicks;
+				acc.impressions = (acc.impressions || 0) + row.impressions;
+				acc.ctr = (acc.ctr || 0) + row.ctr;
+				acc.position = (acc.position || 0) + row.position;
+				return acc;
+			}, {
+				clicks: 0,
+				impressions: 0,
+				ctr: 0,
+				position: 0
+			});
+			document.getElementById('total-clicks').textContent = scMetrics.clicks.toLocaleString();
+			document.getElementById('total-impressions').textContent = scMetrics.impressions.toLocaleString();
+			document.getElementById('avg-ctr').textContent = (scMetrics.ctr / searchConsoleData.rows.length * 100).toFixed(1) + '%';
+			document.getElementById('avg-position').textContent = (scMetrics.position / searchConsoleData.rows.length).toFixed(1);
+			// Update Clicks and Impressions Chart
+			const scData = searchConsoleData.rows.reduce((acc, row) => {
+				const date = row.keys[0]; // Assuming date dimension is included
+				acc[date] = acc[date] || {
+					clicks: 0,
+					impressions: 0
+				};
+				acc[date].clicks += row.clicks;
+				acc[date].impressions += row.impressions;
+				return acc;
+			}, {});
+			updateClicksImpressionsChart(Object.keys(scData).map(date => ({
+				date,
+				clicks: scData[date].clicks,
+				impressions: scData[date].impressions
+			})));
+			// Update Top Queries Chart
+			const topQueries = searchConsoleData.rows.map(row => ({
+				query: row.keys[0],
+				clicks: row.clicks
+			}));
+			updateTopQueriesChart(topQueries);
+			// Update Detailed Query Table
+			updateDetailedQueryTable(searchConsoleData.rows || []);
+		}
+		// Update Analytics Tab
+		function updateAnalyticsTab() {
+			// Update Quick Stats
+			const metrics = analyticsData.rows.reduce((acc, row) => {
+				acc.activeUsers = (acc.activeUsers || 0) + parseInt(row.metricValues[0].value);
+				acc.sessions = (acc.sessions || 0) + parseInt(row.metricValues[1].value);
+				acc.conversionRate = (acc.conversionRate || 0) + parseFloat(row.metricValues[4].value);
+				acc.newUsers = (acc.newUsers || 0) + parseInt(row.metricValues[0].value);
+				return acc;
+			}, {
+				activeUsers: 0,
+				sessions: 0,
+				conversionRate: 0,
+				newUsers: 0
+			});
+			document.getElementById('active-users').textContent = metrics.activeUsers.toLocaleString();
+			document.getElementById('sessions').textContent = metrics.sessions.toLocaleString();
+			document.getElementById('conversion-rate').textContent = (metrics.conversionRate / analyticsData.rows.length).toFixed(1) + '%';
+			document.getElementById('new-users').textContent = metrics.newUsers.toLocaleString();
+			// Update Users and Sessions Chart
+			const userSessionData = analyticsData.rows.reduce((acc, row) => {
+				const date = row.dimensionValues[0].value;
+				acc[date] = acc[date] || {
+					users: 0,
+					sessions: 0
+				};
+				acc[date].users += parseInt(row.metricValues[0].value);
+				acc[date].sessions += parseInt(row.metricValues[1].value);
+				return acc;
+			}, {});
+			updateUsersSessionsChart(Object.keys(userSessionData).map(date => ({
+				date,
+				users: userSessionData[date].users,
+				sessions: userSessionData[date].sessions
+			})));
+			// Update Traffic Sources Chart
+			const trafficSources = analyticsData.rows.reduce((acc, row) => {
+				const source = row.dimensionValues[1].value; // Assuming source dimension
+				acc[source] = (acc[source] || 0) + parseInt(row.metricValues[0].value);
+				return acc;
+			}, {});
+			updateTrafficSourcesChart(Object.entries(trafficSources).map(([source, users]) => ({
+				source,
+				users
+			})));
+			// Update User Behavior Table
+			updateUserBehaviorTable(analyticsData.rows || []);
+		}
+		// Chart Update Functions
+		function updateTrafficOverviewChart(data) {
+			const svg = document.querySelector('#traffic-overview-chart svg');
+			if (!data || data.length === 0) {
+				svg.innerHTML = '<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">No data to display</text>';
+				return;
+			}
+
+			const maxValue = Math.max(...data.map(d => Math.max(d.users, d.pageViews)));
+			const yAxisLabels = [0, 0.25, 0.5, 0.75, 1].map(v => Math.round(v * maxValue));
+
+			svg.innerHTML = `
+                <!-- Grid Lines -->
+                ${[...Array(5)].map((_, i) => `<line x1="50" y1="${250 - i * 50}" x2="750" y2="${250 - i * 50}" stroke="#E0E0E0" stroke-width="1" />`).join('')}
+
+                <!-- Y-axis labels -->
+                ${yAxisLabels.map((label, i) => `<text x="40" y="${250 - i * 50}" text-anchor="end" font-size="12" fill="#757575">${label}</text>`).join('')}
+            `;
+
+			const step = (750 - 100) / (data.length - 1);
+			const userPoints = data.map((d, i) => {
+				const y = 250 - (d.users / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			const pageViewPoints = data.map((d, i) => {
+				const y = 250 - (d.pageViews / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+
+			svg.innerHTML += `
+                <!-- Line for Users -->
+                <path d="M${userPoints.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+                <!-- Line for Page Views -->
+                <path d="M${pageViewPoints.join(' L')}" fill="none" stroke="#B58392" stroke-width="3" />
+                ${data.map((d, i) => `
+                    <!-- Data points for Users -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.users / maxValue * 200)}" r="5" fill="#6750A4" />
+                    <!-- Data points for Page Views -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.pageViews / maxValue * 200)}" r="5" fill="#B58392" />
+                    <!-- X-axis labels -->
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+                `).join('')}
+            `;
+		}
+		function updateTopPagesChart(data) {
+			const svg = document.querySelector('#top-pages-chart svg');
+			if (!data || data.length === 0) {
+				svg.innerHTML = '<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">No data to display</text>';
+				return;
+			}
+			const maxValue = Math.max(...data.map(d => d.views));
+			const barWidth = (700 / data.length) * 0.8;
+			const step = 700 / data.length;
+
+			svg.innerHTML = `
+				<line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+				${data.map((d, i) => `
+					<rect x="${100 + i * step - barWidth/2}" y="${250 - (d.views / maxValue * 220)}" width="${barWidth}" height="${(d.views / maxValue) * 220}" fill="#6750A4" />
+					<text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${d.path.substring(0,10)}...</text>
+				`).join('')}
+			`;
+		}
+		function updateClicksImpressionsChart(data) {
+			const svg = document.querySelector('#clicks-impressions-chart svg');
+			if (!data || data.length === 0) {
+				svg.innerHTML = '<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">No data to display</text>';
+				return;
+			}
+			const maxValue = Math.max(...data.map(d => Math.max(d.clicks, d.impressions)));
+			const step = (700) / (data.length - 1);
+
+			svg.innerHTML = `
+				<!-- Grid and Y-axis labels -->
+				${[...Array(5)].map((_, i) => `
+					<line x1="50" y1="${250 - i * 50}" x2="750" y2="${250 - i * 50}" stroke="#E0E0E0" stroke-width="1" />
+					<text x="40" y="${250 - i * 50}" text-anchor="end" font-size="12" fill="#757575">${Math.round(i * maxValue / 4)}</text>
+				`).join('')}
+			`;
+			const clickPoints = data.map((d, i) => `${50 + i * step},${250 - (d.clicks / maxValue * 200)}`);
+			const impressionPoints = data.map((d, i) => `${50 + i * step},${250 - (d.impressions / maxValue * 200)}`);
+
+			svg.innerHTML += `
+				<path d="M${clickPoints.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+				<path d="M${impressionPoints.join(' L')}" fill="none" stroke="#B58392" stroke-width="3" />
+				${data.map((d, i) => `
+					<circle cx="${50 + i * step}" cy="${250 - (d.clicks / maxValue * 200)}" r="4" fill="#6750A4" />
+					<circle cx="${50 + i * step}" cy="${250 - (d.impressions / maxValue * 200)}" r="4" fill="#B58392" />
+					<text x="${50 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+				`).join('')}
+			`;
+		}
+		function updateTopQueriesChart(data) {
+			const svg = document.querySelector('#top-queries-chart svg');
+			if (!data || data.length === 0) {
+				svg.innerHTML = '<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">No data to display</text>';
+				return;
+			}
+			const maxValue = Math.max(...data.map(d => d.clicks));
+			const barWidth = (700 / data.length) * 0.8;
+			const step = 700 / data.length;
+
+			svg.innerHTML = `
+				<line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+				${data.map((d, i) => `
+					<rect x="${100 + i * step - barWidth/2}" y="${250 - (d.clicks / maxValue * 220)}" width="${barWidth}" height="${(d.clicks / maxValue) * 220}" fill="#6750A4" />
+					<text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${d.query.substring(0,10)}...</text>
+				`).join('')}
+			`;
+		}
+		function updateUsersSessionsChart(data) {
+			const svg = document.querySelector('#users-sessions-chart svg');
+			if (!data || data.length === 0) {
+				svg.innerHTML = '<text x="400" y="150" text-anchor="middle" font-size="16" fill="#757575">No data to display</text>';
+				return;
+			}
+			const maxValue = Math.max(...data.map(d => Math.max(d.users, d.sessions)));
+			const step = (700) / (data.length - 1);
+
+			svg.innerHTML = `
+				<!-- Grid and Y-axis labels -->
+				${[...Array(5)].map((_, i) => `
+					<line x1="50" y1="${250 - i * 50}" x2="750" y2="${250 - i * 50}" stroke="#E0E0E0" stroke-width="1" />
+					<text x="40" y="${250 - i * 50}" text-anchor="end" font-size="12" fill="#757575">${Math.round(i * maxValue / 4)}</text>
+				`).join('')}
+			`;
+			const userPoints = data.map((d, i) => `${50 + i * step},${250 - (d.users / maxValue * 200)}`);
+			const sessionPoints = data.map((d, i) => `${50 + i * step},${250 - (d.sessions / maxValue * 200)}`);
+
+			svg.innerHTML += `
+				<path d="M${userPoints.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+				<path d="M${sessionPoints.join(' L')}" fill="none" stroke="#B58392" stroke-width="3" />
+				${data.map((d, i) => `
+					<circle cx="${50 + i * step}" cy="${250 - (d.users / maxValue * 200)}" r="4" fill="#6750A4" />
+					<circle cx="${50 + i * step}" cy="${250 - (d.sessions / maxValue * 200)}" r="4" fill="#B58392" />
+					<text x="${50 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+				`).join('')}
+			`;
+		}
+		function updateTrafficSourcesChart(data) {
+			const svg = document.querySelector('#traffic-sources-chart svg');
+			if (!data || data.length === 0) {
+				svg.innerHTML = '<text x="200" y="150" text-anchor="middle" font-size="16" fill="#757575">No data to display</text>';
+				return;
+			}
+
+			const totalUsers = data.reduce((sum, d) => sum + d.users, 0);
+			const colors = ['#6750A4', '#958DA5', '#B58392', '#FEF7FF', '#FFFBFE'];
+			let startAngle = 0;
+
+			const slices = data.map((d, i) => {
+				const angle = (d.users / totalUsers) * 360;
+				const endAngle = startAngle + angle;
+				const largeArc = angle > 180 ? 1 : 0;
+				const x1 = 200 + 100 * Math.cos(Math.PI * startAngle / 180);
+				const y1 = 150 + 100 * Math.sin(Math.PI * startAngle / 180);
+				const x2 = 200 + 100 * Math.cos(Math.PI * endAngle / 180);
+				const y2 = 150 + 100 * Math.sin(Math.PI * endAngle / 180);
+
+				const path = `M200,150 L${x1},${y1} A100,100 0 ${largeArc},1 ${x2},${y2} Z`;
+				startAngle = endAngle;
+				return `<path d="${path}" fill="${colors[i % colors.length]}" />`;
+			}).join('');
+
+			svg.innerHTML = slices;
+		}
+		// Chart Update Functions
+		function updateTopPagesChart(data) {
+			const svg = document.querySelector('#top-pages-chart svg');
+			svg.innerHTML = `
+                <!-- Grid Lines -->
+                <line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="200" x2="750" y2="200" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
+
+                <!-- Y-axis labels -->
+                <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
+                <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
+                <text x="40" y="150" text-anchor="end" font-size="12" fill="#757575">10k</text>
+                <text x="40" y="100" text-anchor="end" font-size="12" fill="#757575">15k</text>
+                <text x="40" y="50" text-anchor="end" font-size="12" fill="#757575">20k</text>
+            `;
+			const maxValue = Math.max(...data.map(d => d.views));
+			const step = (750 - 100) / (data.length - 1);
+			const points = data.map((d, i) => {
+				const y = 250 - (d.views / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+
+			svg.innerHTML += `
+                <!-- Line for Page Views -->
+                <path d="M${points.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+                ${data.map((d, i) => `
+                    <!-- Data points for Page Views -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.views / maxValue * 200)}" r="5" fill="#6750A4" />
+                    <!-- X-axis labels -->
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${d.path.substring(0, 10)}...</text>
+                `).join('')}
+            `;
+		}
+		function updateClicksImpressionsChart(data) {
+			const svg = document.querySelector('#clicks-impressions-chart svg');
+			svg.innerHTML = `
+                <!-- Grid Lines -->
+                <line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="200" x2="750" y2="200" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
+
+                <!-- Y-axis labels -->
+                <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
+                <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
+                <text x="40" y="150" text-anchor="end" font-size="12" fill="#757575">10k</text>
+                <text x="40" y="100" text-anchor="end" font-size="12" fill="#757575">15k</text>
+                <text x="40" y="50" text-anchor="end" font-size="12" fill="#757575">20k</text>
+            `;
+			const maxValue = Math.max(...data.map(d => Math.max(d.clicks, d.impressions)));
+			const step = (750 - 100) / (data.length - 1);
+			const clickPoints = data.map((d, i) => {
+				const y = 250 - (d.clicks / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			const impressionPoints = data.map((d, i) => {
+				const y = 250 - (d.impressions / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			svg.innerHTML += `
+                <!-- Line for Clicks -->
+                <path d="M${clickPoints.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+                <!-- Line for Impressions -->
+                <path d="M${impressionPoints.join(' L')}" fill="none" stroke="#B58392" stroke-width="3" />
+                ${data.map((d, i) => `
+                    <!-- Data points for Clicks -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.clicks / maxValue * 200)}" r="5" fill="#6750A4" />
+                    <!-- Data points for Impressions -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.impressions / maxValue * 200)}" r="5" fill="#B58392" />
+                    <!-- X-axis labels -->
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+                `).join('')}
+            `;
+		}
+		function updateTopQueriesChart(data) {
+			const svg = document.querySelector('#top-queries-chart svg');
+			svg.innerHTML = `
+                <!-- Grid Lines -->
+                <line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="200" x2="750" y2="200" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
+
+                <!-- Y-axis labels -->
+                <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
+                <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
+                <text x="40" y="150" text-anchor="end" font-size="12" fill="#757575">10k</text>
+                <text x="40" y="100" text-anchor="end" font-size="12" fill="#757575">15k</text>
+                <text x="40" y="50" text-anchor="end" font-size="12" fill="#757575">20k</text>
+            `;
+			const maxValue = Math.max(...data.map(d => d.clicks));
+			const step = (750 - 100) / (data.length - 1);
+			const points = data.map((d, i) => {
+				const y = 250 - (d.clicks / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+
+			svg.innerHTML += `
+                <!-- Line for Clicks -->
+                <path d="M${points.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+                ${data.map((d, i) => `
+                    <!-- Data points for Clicks -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.clicks / maxValue * 200)}" r="5" fill="#6750A4" />
+                    <!-- X-axis labels -->
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${d.query.substring(0, 10)}...</text>
+                `).join('')}
+            `;
+		}
+		function updateUsersSessionsChart(data) {
+			const svg = document.querySelector('#users-sessions-chart svg');
+			svg.innerHTML = `
+                <!-- Grid Lines -->
+                <line x1="50" y1="250" x2="750" y2="250" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="200" x2="750" y2="200" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="150" x2="750" y2="150" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="100" x2="750" y2="100" stroke="#E0E0E0" stroke-width="1" />
+                <line x1="50" y1="50" x2="750" y2="50" stroke="#E0E0E0" stroke-width="1" />
+
+                <!-- Y-axis labels -->
+                <text x="40" y="250" text-anchor="end" font-size="12" fill="#757575">0</text>
+                <text x="40" y="200" text-anchor="end" font-size="12" fill="#757575">5k</text>
+                <text x="40" y="150" text-anchor="end" font-size="12" fill="#757575">10k</text>
+                <text x="40" y="100" text-anchor="end" font-size="12" fill="#757575">15k</text>
+                <text x="40" y="50" text-anchor="end" font-size="12" fill="#757575">20k</text>
+            `;
+			const maxValue = Math.max(...data.map(d => Math.max(d.users, d.sessions)));
+			const step = (750 - 100) / (data.length - 1);
+			const userPoints = data.map((d, i) => {
+				const y = 250 - (d.users / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			const sessionPoints = data.map((d, i) => {
+				const y = 250 - (d.sessions / maxValue * 200);
+				return `${100 + i * step},${y}`;
+			});
+			svg.innerHTML += `
+                <!-- Line for Users -->
+                <path d="M${userPoints.join(' L')}" fill="none" stroke="#6750A4" stroke-width="3" />
+                <!-- Line for Sessions -->
+                <path d="M${sessionPoints.join(' L')}" fill="none" stroke="#B58392" stroke-width="3" />
+                ${data.map((d, i) => `
+                    <!-- Data points for Users -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.users / maxValue * 200)}" r="5" fill="#6750A4" />
+                    <!-- Data points for Sessions -->
+                    <circle cx="${100 + i * step}" cy="${250 - (d.sessions / maxValue * 200)}" r="5" fill="#B58392" />
+                    <!-- X-axis labels -->
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+                `).join('')}
+            `;
+		}
+		function updateTrafficSourcesChart(data) {
+			const svg = document.querySelector('#traffic-sources-chart svg');
+			svg.innerHTML = `
+                <!-- Placeholder -->
+                <text x="200" y="150" text-anchor="middle" font-size="16" fill="#757575">Loading data...</text>
+            `;
+		}
+		// Chart Update Functions
+		function updateTopPagesChart(data) {
+			console.log("updateTopPagesChart", data);
+		}
+		function updateClicksImpressionsChart(data) {
+			console.log("updateClicksImpressionsChart", data);
+		}
+		function updateTopQueriesChart(data) {
+			console.log("updateTopQueriesChart", data);
+		}
+		function updateUsersSessionsChart(data) {
+			console.log("updateUsersSessionsChart", data);
+		}
+		function updateTrafficSourcesChart(data) {
+			console.log("updateTrafficSourcesChart", data);
+		}
+		function formatDuration(seconds) {
+			const minutes = Math.floor(seconds / 60);
+			const remainingSeconds = Math.floor(seconds % 60);
+			return `${minutes}m ${remainingSeconds}s`;
+		}
+		async function initializeGapiClient() {
+			await gapi.client.init({
+				apiKey: API_KEY,
+				discoveryDocs: DISCOVERY_DOCS,
+			});
+			gapiInited = true;
+			maybeEnableButtons();
+		}
+		// Initialize Google Identity Services
+		function initGis() {
+			tokenClient = google.accounts.oauth2.initTokenClient({
+				client_id: CLIENT_ID,
+				scope: SCOPES.join(' '),
+				callback: (tokenResponse) => {
+					if (tokenResponse.access_token) {
+						gapi.client.setToken(tokenResponse);
+						loadDashboardData();
+					}
+				},
+			});
+			gisInited = true;
+			maybeEnableButtons();
+		}
+
+		function maybeEnableButtons() {
+			if (gapiInited && gisInited) {
+				document.getElementById('connectApiBtn').disabled = false;
+			}
+		}
+
+		// Modal Handling
+		const apiModal = document.getElementById('apiModal');
+		const pdfPreviewModal = document.getElementById('pdfPreviewModal');
+
+		function showModal(modal) {
+			modal.classList.remove('hidden');
+		}
+
+		function hideModal(modal) {
+			modal.classList.add('hidden');
+		}
+
+		document.getElementById('connectSheetBtn').addEventListener('click', () => showModal(apiModal));
+		document.getElementById('closeApiModal').addEventListener('click', () => hideModal(apiModal));
+		document.getElementById('cancelApiBtn').addEventListener('click', () => hideModal(apiModal));
+
+		document.getElementById('exportPdfBtn').addEventListener('click', () => showModal(pdfPreviewModal));
+		document.getElementById('closePdfModal').addEventListener('click', () => hideModal(pdfPreviewModal));
+		document.getElementById('cancelPdfBtn').addEventListener('click', () => hideModal(pdfPreviewModal));
+
+		// Tab Navigation
+		const navLinks = document.querySelectorAll('.nav-item');
+		const tabs = document.querySelectorAll('.tab-content');
+		navLinks.forEach(link => {
+			link.addEventListener('click', (e) => {
+				e.preventDefault();
+				const target = link.getAttribute('href');
+
+				navLinks.forEach(nav => nav.classList.remove('active'));
+				link.classList.add('active');
+
+				tabs.forEach(tab => {
+					if (`#${tab.id}` === target) {
+						tab.classList.remove('hidden');
+					} else {
+						tab.classList.add('hidden');
+					}
+				});
+			});
+		});
+
+		// Date Range Chips
+		const dateChips = document.querySelectorAll('.chip');
+		dateChips.forEach(chip => {
+			chip.addEventListener('click', () => {
+				dateChips.forEach(c => c.classList.remove('active'));
+				chip.classList.add('active');
+				currentDateRange = chip.dataset.range;
+				loadDashboardData();
+			});
+		});
+
+		// Dropdown menus
+		document.addEventListener('click', (e) => {
+			const isDropdownButton = e.target.matches("[data-dropdown-toggle]");
+			if (!isDropdownButton && e.target.closest('.dropdown') === null) {
+				document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+			}
+		});
+		document.querySelectorAll('[data-dropdown-toggle]').forEach(button => {
+			button.addEventListener('click', (e) => {
+				const dropdownId = button.dataset.dropdownToggle;
+				document.getElementById(dropdownId).classList.toggle('show');
+			});
+		});
+
+
+		// Load Dashboard Data
+		async function loadDashboardData() {
+			hideModal(apiModal);
 			const propertyId = document.getElementById('propertyId').value;
 			const siteUrl = document.getElementById('siteUrl').value;
 			if (!propertyId || !siteUrl) {
