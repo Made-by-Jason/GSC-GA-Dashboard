@@ -2418,4 +2418,12 @@
                     <!-- Data points for Page Views -->
                     <circle cx="${100 + i * step}" cy="${250 - (d.pageViews / maxValue * 200)}" r="5" fill="#B58392" />
                     <!-- X-axis labels -->
-                    <text x="${100 +
+                    <text x="${100 + i * step}" y="270" text-anchor="middle" font-size="12" fill="#757575">${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>
+                `).join('')}
+            `;
+		}
+
+	</script>
+</body>
+
+</html>
