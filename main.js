@@ -43,34 +43,49 @@ document.querySelectorAll('.chip').forEach(chip => {
 
 // ----- Connected Google Sheet Button -----
 document.getElementById('connectSheetBtn')?.addEventListener('click', () => {
-  // TODO: Implement logic to connect to a Google Sheet
-  console.log('Attempting to connect to Google Sheet...');
-  // Example: Trigger OAuth flow or show a modal for sheet URL input
-  alert('Connect to Google Sheet functionality is not yet implemented.');
+  connectToGoogleSheet();
 });
 
 // ----- PDF Export Buttons -----
 document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
-  // TODO: Implement logic to export the dashboard to PDF
-  console.log('Attempting to export dashboard to PDF...');
-  // Example: Use a library like html2pdf.js or a server-side solution
-  alert('Dashboard export to PDF functionality is not yet implemented.');
+  exportDashboardToPdf();
 });
 document.getElementById('exportReportBtn')?.addEventListener('click', () => {
-  // TODO: Implement logic to export the custom report to PDF
-  console.log('Attempting to export custom report to PDF...');
-  // Example: Collect the report items and generate a PDF
-  alert('Custom report export to PDF functionality is not yet implemented.');
+  exportReportToPdf();
 });
 
 // ----- Report Builder -----
 document.querySelectorAll('#availableCharts .add-chart').forEach(btn => {
   btn.addEventListener('click', () => {
     const chartItem = btn.closest('.chart-item');
-    // Clone the chart item but remove interactive elements specific to available charts
-    const clone = chartItem.cloneNode(true); 
-    // Remove the "Add to Report" button and its container if it exists
-    clone.querySelector('.add-chart')?.closest('button')?.remove();
+ if (!chartItem) {
+ return; // Exit if chart-item is not found
+ }
+
+ const clone = chartItem.cloneNode(true);
+
+ // Find and remove the element that contains the "Add to Report" button
+ const addChartButtonContainer = clone.querySelector('.add-chart');
+ if (addChartButtonContainer) {
+ let elementToRemove = addChartButtonContainer;
+ // Traverse up to find a suitable container to remove, e.g., a div or parent element holding the button
+ // This part might need adjustment based on your HTML structure
+ while (elementToRemove && !elementToRemove.classList.contains('chart-item-actions') && elementToRemove.parentElement) {
+ elementToRemove = elementToRemove.parentElement;
+ }
+ // If we found a container element to remove (and it's not the cloned chart-item itself), remove it
+ if (elementToRemove && elementToRemove !== clone) {
+ elementToRemove.remove();
+ } else {
+ // If no specific container found, just remove the button itself as a fallback
+ addChartButtonContainer.remove();
+ }
+ }
+
+ // Also remove any other interactive elements that shouldn't be in the report
+ clone.querySelectorAll('button, a, input, select, textarea').forEach(interactiveEl => {
+ interactiveEl.style.pointerEvents = 'none'; // Disable interaction
+ });
     clone.classList.replace('chart-item', 'report-item');
     clone.querySelector('.add-chart').remove();
 
@@ -110,26 +125,140 @@ document.querySelectorAll('#yourReport .report-item').forEach(addReportItemHandl
 
 // ----- Preview Report -----
 document.getElementById('previewReportBtn')?.addEventListener('click', () => {
-  // TODO: Implement logic to preview the report
-  console.log('Attempting to preview report...');
-  // Example: Open a modal or a new tab with the report layout
-  alert('Report preview functionality is not yet implemented.');
+  previewReport();
 });
 
 // ----- Add to Report Button -----
 document.getElementById('addToReportBtn')?.addEventListener('click', () => {
-  // This button likely refers to adding a pre-defined Search Console Performance section
-  // Similar logic to adding charts from 'availableCharts' could be used, targeting a specific template or element.
-  console.log('Attempting to add Search Console Performance to custom report...');
-  alert('Adding Search Console Performance to custom report functionality is not yet implemented.');
+  addSearchConsolePerformanceToReport();
 });
 
 // ----- Export Search Console Data -----
 document.getElementById('export-search-console-btn')?.addEventListener('click', () => {
-  // TODO: Implement logic to export Search Console data to a Google Sheet
-  console.log('Attempting to export Search Console data to Sheet...');
-  alert('Export Search Console data to Sheet functionality is not yet implemented.');
+  exportSearchConsoleDataToSheet();
 });
+
+// ----- Function Implementations for Buttons -----
+
+// Conceptual function to initiate Google Sheets API authorization
+function connectToGoogleSheet() {
+  console.log('Initiating Google Sheets connection...');
+  // This would typically involve:
+  // 1. Loading the Google API client library (gapi or similar)
+  // 2. Configuring your API key and OAuth Client ID
+  // 3. Calling gapi.client.init or similar to initialize the client
+  // 4. Calling gapi.auth2.getAuthInstance().signIn() to trigger the OAuth flow
+  // You would need to handle the response in a callback function.
+  alert('Google Sheets connection logic needs to be implemented using Google API client library.');
+}
+
+// Conceptual function to export dashboard to PDF using html2pdf.js
+function exportDashboardToPdf() {
+  console.log('Exporting dashboard to PDF...');
+  const element = document.getElementById('dashboard'); // Assuming your dashboard content is within an element with id 'dashboard'
+
+  if (!element) {
+    console.error('Dashboard element not found for PDF export.');
+    alert('Could not find dashboard content to export.');
+    return;
+  }
+
+  // This requires the html2pdf.js library to be included in your HTML.
+  // Example usage (conceptual):
+  /*
+  html2pdf(element, {
+    margin: 10,
+    filename: 'dashboard-report.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  });
+  */
+  alert('PDF export functionality requires a library like html2pdf.js and needs to be implemented.');
+}
+
+// Conceptual function to export custom report to PDF using html2pdf.js
+function exportReportToPdf() {
+  console.log('Exporting custom report to PDF...');
+  const element = document.getElementById('yourReport'); // Assuming your report content is within an element with id 'yourReport'
+
+  if (!element) {
+    console.error('Report element not found for PDF export.');
+    alert('Could not find report content to export.');
+    return;
+  }
+
+  // Similar to dashboard export, requires html2pdf.js or similar.
+  /*
+  html2pdf(element, {
+    margin: 10,
+    filename: 'custom-report.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  });
+  */
+  alert('Custom report export to PDF functionality requires a library like html2pdf.js and needs to be implemented.');
+}
+
+// Basic function to preview the report
+function previewReport() {
+  console.log('Previewing report...');
+  // This could involve:
+  // - Opening a modal window showing the report content.
+  // - Navigating to a new page/route dedicated to report preview.
+  // - Simply toggling the visibility of a dedicated preview div.
+  const previewArea = document.getElementById('reportPreviewArea'); // Assuming you have an element for preview
+  if (previewArea) {
+    previewArea.classList.toggle('hidden');
+    console.log('Report preview area toggled.');
+  } else {
+    alert('Report preview area element not found. Preview logic needs implementation.');
+  }
+
+  // Log current report items for debugging/development
+  const reportItems = document.querySelectorAll('#yourReport .report-item');
+  console.log('Current Report Items:', Array.from(reportItems).map(item => item.textContent.substring(0, 50) + '...'));
+}
+
+// Conceptual function to add Search Console Performance to report
+function addSearchConsolePerformanceToReport() {
+  console.log('Adding Search Console Performance to report...');
+  // This would involve:
+  // 1. Identifying the template or content for Search Console Performance.
+  // 2. Cloning or creating that content.
+  // 3. Appending it to the #yourReport section.
+  // 4. Adding the necessary move/delete handlers using addReportItemHandlers().
+  alert('Adding Search Console Performance to custom report functionality needs implementation.');
+}
+
+// Basic function to export Search Console data as CSV
+function exportSearchConsoleDataToSheet() {
+  console.log('Exporting Search Console data...');
+
+  // Example data (replace with actual data retrieval logic)
+  const data = [
+    ['Query', 'Clicks', 'Impressions', 'CTR', 'Position'],
+    ['example query 1', '123', '4567', '2.7%', '8.2'],
+    ['example query 2', '45', '1234', '3.6%', '5.5'],
+    ['example query 3', '80', '5678', '1.4%', '10.1']
+  ];
+
+  const csvContent = data.map(row => row.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  if (link.download !== undefined) { // Feature detection
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'search_console_data.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else {
+    alert('Your browser does not support downloading files directly.');
+  }
+}
 
 // ----- Dummy Data Loaders (for demo) -----
 function loadDashboardStats() {
