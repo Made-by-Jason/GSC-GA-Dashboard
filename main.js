@@ -43,22 +43,34 @@ document.querySelectorAll('.chip').forEach(chip => {
 
 // ----- Connected Google Sheet Button -----
 document.getElementById('connectSheetBtn')?.addEventListener('click', () => {
-  alert('Connect to Google Sheet (not implemented)');
+  // TODO: Implement logic to connect to a Google Sheet
+  console.log('Attempting to connect to Google Sheet...');
+  // Example: Trigger OAuth flow or show a modal for sheet URL input
+  alert('Connect to Google Sheet functionality is not yet implemented.');
 });
 
 // ----- PDF Export Buttons -----
 document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
-  alert('Export dashboard to PDF (not implemented)');
+  // TODO: Implement logic to export the dashboard to PDF
+  console.log('Attempting to export dashboard to PDF...');
+  // Example: Use a library like html2pdf.js or a server-side solution
+  alert('Dashboard export to PDF functionality is not yet implemented.');
 });
 document.getElementById('exportReportBtn')?.addEventListener('click', () => {
-  alert('Export custom report to PDF (not implemented)');
+  // TODO: Implement logic to export the custom report to PDF
+  console.log('Attempting to export custom report to PDF...');
+  // Example: Collect the report items and generate a PDF
+  alert('Custom report export to PDF functionality is not yet implemented.');
 });
 
 // ----- Report Builder -----
 document.querySelectorAll('#availableCharts .add-chart').forEach(btn => {
   btn.addEventListener('click', () => {
     const chartItem = btn.closest('.chart-item');
-    const clone = chartItem.cloneNode(true);
+    // Clone the chart item but remove interactive elements specific to available charts
+    const clone = chartItem.cloneNode(true); 
+    // Remove the "Add to Report" button and its container if it exists
+    clone.querySelector('.add-chart')?.closest('button')?.remove();
     clone.classList.replace('chart-item', 'report-item');
     clone.querySelector('.add-chart').remove();
 
@@ -98,17 +110,25 @@ document.querySelectorAll('#yourReport .report-item').forEach(addReportItemHandl
 
 // ----- Preview Report -----
 document.getElementById('previewReportBtn')?.addEventListener('click', () => {
-  alert('Preview report (not implemented)');
+  // TODO: Implement logic to preview the report
+  console.log('Attempting to preview report...');
+  // Example: Open a modal or a new tab with the report layout
+  alert('Report preview functionality is not yet implemented.');
 });
 
 // ----- Add to Report Button -----
 document.getElementById('addToReportBtn')?.addEventListener('click', () => {
-  alert('Add Search Console Performance to custom report (not implemented)');
+  // This button likely refers to adding a pre-defined Search Console Performance section
+  // Similar logic to adding charts from 'availableCharts' could be used, targeting a specific template or element.
+  console.log('Attempting to add Search Console Performance to custom report...');
+  alert('Adding Search Console Performance to custom report functionality is not yet implemented.');
 });
 
 // ----- Export Search Console Data -----
 document.getElementById('export-search-console-btn')?.addEventListener('click', () => {
-  alert('Export Search Console data to Sheet (not implemented)');
+  // TODO: Implement logic to export Search Console data to a Google Sheet
+  console.log('Attempting to export Search Console data to Sheet...');
+  alert('Export Search Console data to Sheet functionality is not yet implemented.');
 });
 
 // ----- Dummy Data Loaders (for demo) -----
